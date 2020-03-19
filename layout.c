@@ -236,18 +236,16 @@ main(int argc, char **argv)
 	root = XDefaultRootWindow(dpy);
 	features_is_supported(needed_features);
 
-	XSelectInput(dpy, root, FocusChangeMask | SubstructureNotifyMask);
+	XSelectInput(dpy, root, SubstructureNotifyMask);
 	XSync(dpy, false);
 
 	do {
 		switch (e.type) {
-		case FocusIn:
+		case ConfigureNotify:
 			get_layout(&win.layout);
 
 			arr_edit_append(&wins, win);
-			break;
 
-		case FocusOut:
 			get_active_window(&win.id);
 
 			if (!arr_get(&wins, &win))
