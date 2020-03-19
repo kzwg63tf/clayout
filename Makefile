@@ -5,7 +5,7 @@ PREFIX ?= /usr/local
 
 X11LIB = /usr/X11R6/lib
 LIBS   = -L${X11LIB} -lX11
-CFLAGS = -std=c99 -pedantic -Wall -O3 ${LIBS}
+CFLAGS = -std=c99 -Wall -pedantic -O3 ${LIBS}
 
 all: clayout
 
