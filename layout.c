@@ -51,6 +51,7 @@ static Window root;
 static Atom request;
 static Display *dpy;
 static WinLayout win;
+static Atom NET_ACTIVE_WINDOW;
 
 static long unsigned int i;
 static long unsigned int nitems;
@@ -76,8 +77,7 @@ get_active_window(Window *win)
 {
 	unsigned char *data;
 
-	request = XInternAtom(dpy, "_NET_ACTIVE_WINDOW", false);
-	data = get_property(request, &nitems);
+	data = get_property(NET_ACTIVE_WINDOW, &nitems);
 
 	if (nitems > 0)
 		*win = *((Window *) data);
@@ -217,7 +217,6 @@ main(int argc, char **argv)
 	bool verbose = false;
 	const char *needed_features[] = {
 		"_NET_ACTIVE_WINDOW",
-		"_NET_CLIENT_LIST",
 	};
 
 	if (argc == 2 && !strcmp("-v", argv[1])) {
@@ -235,28 +234,31 @@ main(int argc, char **argv)
 	arr_new(wins);
 	root = XDefaultRootWindow(dpy);
 	features_is_supported(needed_features);
+	NET_ACTIVE_WINDOW = XInternAtom(dpy, "_NET_ACTIVE_WINDOW", false);
 
-	XSelectInput(dpy, root, SubstructureNotifyMask);
+	XSelectInput(dpy, root, SubstructureNotifyMask | PropertyChangeMask);
 	XSync(dpy, false);
 
 	do {
 		switch (e.type) {
-		case ConfigureNotify:
-			get_layout(&win.layout);
+		case PropertyNotify:
+			if (e.xproperty.atom == NET_ACTIVE_WINDOW) {
+				get_layout(&win.layout);
 
-			arr_edit_append(&wins, win);
+				arr_edit_append(&wins, win);
 
-			get_active_window(&win.id);
+				get_active_window(&win.id);
 
-			if (!arr_get(&wins, &win))
-				win.layout = 0;
+				if (!arr_get(&wins, &win))
+					win.layout = 0;
 
-			if (verbose)
-				fprintf(stderr, " {%d | 0x%lx: %u}         \r",
+				if (verbose)
+					fprintf(stderr, " {%d | 0x%lx: %u} \r",
 						wins.size, win.id, win.layout);
 
-			set_layout(win.layout);
-			break;
+				set_layout(win.layout);
+				break;
+			}
 
 		case DestroyNotify:
 			arr_remove(&wins, e.xdestroywindow.window);
